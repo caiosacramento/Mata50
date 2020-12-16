@@ -31,12 +31,23 @@ class Arvore:
     def __init__(self, exRe):
         self.folha = dict()
         self.id_contador = 1
-        self.raiz = self.criar_arvore(exRe)
-
+        self.raiz, doideira= self.criar_arvore(exRe)
+        print(doideira)
+        print("Nv 0")
         print(self.raiz)
-        print(type(self.raiz))
-        #print(self.raiz)
-        #print(self.raiz)
+        print("Nv 1")
+        print(self.raiz.filho_esq)
+        print(self.raiz.filho_dir)
+        print("Nv 2")
+        print(self.raiz.filho_esq.filho_esq)
+        print(self.raiz.filho_esq.filho_dir)
+        print("Nv 3")
+        print(self.raiz.filho_esq.filho_esq.filho_esq)
+        print(self.raiz.filho_esq.filho_esq.filho_dir)
+        print("Nv 4")
+        print(self.raiz.filho_esq.filho_esq.filho_dir.filho_esq)
+        print(self.raiz.filho_esq.filho_esq.filho_dir.filho_dir)
+        
         #self.followpos = [set() for i in range(self.id_contador)]
         #self.postorder_nullable_firstpos_lastpos_followpos(self.raiz)
     def criar_arvore(self, exRe):
