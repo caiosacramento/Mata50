@@ -23,7 +23,7 @@ class No:
         '''In console string'''
         childrenCount = int(self.filho_dir != None) + int(self.filho_esq != None)
         s = "<" + "'{0}'".format(self.tipo) + ' Node with label ' + "'{0}'".format(self.operador) + ' and ' + str(
-            childrenCount) + [' child', ' children'][childrenCount != 1] + '>'
+            childrenCount) + [' child', ' children'][childrenCount != 1] + "id é: "+ "'{0}'".format(self.id) + '>'
         return s
 class Arvore:
     # Essa classe controi a árvore sintática, que é muito importante para a conversão para AFD
@@ -48,8 +48,8 @@ class Arvore:
         print(self.raiz.filho_esq.filho_esq.filho_dir.filho_esq)
         print(self.raiz.filho_esq.filho_esq.filho_dir.filho_dir)
         
-        #self.followpos = [set() for i in range(self.id_contador)]
-        #self.postorder_nullable_firstpos_lastpos_followpos(self.raiz)
+        self.followpos = [set() for i in range(self.id_contador)]
+        self.nullable_firstpos_lastpos_followpos(self.raiz)
     def criar_arvore(self, exRe):
         print(exRe)
         if (exRe != []):
@@ -80,6 +80,48 @@ class Arvore:
         id = self.id_contador
         self.id_contador += 1
         return id
+    def nullable_firstpos_lastpos_followpos(self, no):
+        if no== None:
+            return
+        # esq
+        self.nullable_firstpos_lastpos_followpos(no.filho_esq)
+        # dir
+        self.nullable_firstpos_lastpos_followpos(no.filho_dir)
+        #raiz
+        if no.tipo == "letra":
+            if no.operador == "@":  # empty char
+                no.nullable = True
+            else:
+                no.firstpos.add(no.id)
+                no.lastpos.add(no.id)
+        elif no.tipo == "ou":
+            no.nullable = no.filho_esq.nullable or no.filho_dir.nullable
+            no.firstpos = no.filho_esq.firstpos.union(no.filho_dir.firstpos)
+            no.lastpos = no.filho_esq.lastpos.union(no.filho_dir.lastpos)
+        elif no.tipo == "fecho":
+            no.nullable = True
+            no.firstpos = no.filho_esq.firstpos
+            no.lastpos = no.filho_esq.lastpos
+            self.compute_follows(no)  # Follows is only computed for star and cat nodes
+        elif no.tipo == "conc":
+            no.nullable = no.filho_esq.nullable and no.filho_dir.nullable
+            if no.filho_esq.nullable:
+                no.firstpos = no.filho_esq.firstpos.union(no.filho_dir.firstpos)
+            else:
+                no.firstpos = no.filho_esq.firstpos
+            if no.filho_dir.nullable:
+                no.lastpos = no.filho_esq.lastpos.union(no.filho_dir.lastpos)
+            else:
+                no.lastpos = no.filho_dir.lastpos
+            self.compute_follows(no)  # Follows is only computed for star and cat nodes
+        return
+    def compute_follows(self, no):
+        if no.tipo == "conc":
+            for i in no.filho_esq.lastpos:
+                self.followpos[i] = self.followpos[i].union(no.filho_dir.firstpos)
+        elif no.tipo == "fecho":
+            for i in no.filho_esq.lastpos:
+                self.followpos[i] = self.followpos[i].union(no.filho_esq.firstpos)
 def op(caractere):
     ## Diz se o char é uma letra ou um operador
     if caractere == "." or caractere =="*" or caractere =="+":
@@ -125,7 +167,7 @@ def main():
     # Passo 1, processa o input
     ALFABETO, ExRe = ler_input()
     print(ALFABETO, ExRe)
-    Arvore(ExRe)
+    arv = Arvore(ExRe)
 
 if __name__ == "__main__":
     main()
