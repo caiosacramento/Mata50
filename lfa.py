@@ -1,3 +1,101 @@
+class Estado:
+    # Construtor da classe estado
+    # Args:
+    #  Alfabeto da expressão regular
+    #  Lista de folhas
+    #  Id da folha
+
+    def __init__(self, alfabeto, id_lista, id, id_terminal):
+        self.id_set = set(id_lista)
+        self.id = id
+        self.transicoes = dict()
+        print("id_terminal",id_terminal-1)
+        print(self.id_set)
+        #print()
+        self.final = (id_terminal) in self.id_set
+        for a in alfabeto:
+            self.transicoes[a] = {} 
+class AFD:
+    def __init__(self, alfabeto, arvore):
+        self.estados = []
+        self.alfabeto = alfabeto
+        self.id_contador = 1
+        #self.final = arvore.id_contador -1
+        self.final = len(arvore.folhas) +1
+        self.computa_estados(arvore)
+    def computa_estados(self, arvore):
+        D1 = Estado(self.alfabeto, arvore.raiz.lastpos, self.proximo_id(), self.final)
+        self.estados.append(D1)
+        queue = [D1]
+        while len(queue) > 0:  # Encontra as transicoes pros estados
+            st = queue.pop(0)
+            new_states = self.Dtran(st, arvore)
+            for s in new_states:
+                state = Estado(self.alfabeto, s, self.proximo_id(), self.final)
+                self.estados.append(state)
+                queue.append(state)
+        return
+    def Dtran(self, estado, arvore):
+        # Essa função calcula todas as transições de um estado
+        # Recebe o estado e a árvore sintática
+        # Retorna uma lista de estados
+
+        new_states = []
+        for i in estado.id_set:
+            if i == self.final:
+                continue
+            label = arvore.folhas[i]
+            if estado.transicoes[label] == {}:
+                estado.transicoes[label] = arvore.followpos[i]
+            else:
+                estado.transicoes[label] = estado.transicoes[label].union(arvore.followpos[i])
+        for a in self.alfabeto:
+            if estado.transicoes[a] != {}:
+                new = True
+                for s in self.estados:
+                    if s.id_set == estado.transicoes[a] or estado.transicoes[a] in new_states:
+                        new = False
+                if new:
+                    new_states.append(estado.transicoes[a])
+        return new_states
+    def proximo_id(self):
+        id = self.id_contador
+        self.id_contador += 1
+        return id
+    def post_processing(self):
+        # Facilita a vizualização do automato
+        has_none_state = False
+        for state in self.estados:
+            for a in self.alfabeto:
+                if state.transicoes[a] == {}:
+                    has_none_state = True
+                    state.transicoes[a] = self.id_contador
+                SET = state.transicoes[a]
+                for state2 in self.estados:
+                    if state2.id_set == SET:
+                        state.transicoes[a] = state2.id
+        if has_none_state:
+            self.estados.append(Estado(self.alfabeto, [], self.id_contador, self.final))
+            for a in self.alfabeto:
+                self.estados[-1].transicoes[a] = self.estados[-1].id
+    def __str__(self):
+        self.post_processing()
+        s = ''
+        for state in self.estados:
+            if state.id == 1:
+                s = s+'->\t'
+            else:
+                s = s+'\t'
+            s= s+str(state.id)+' \t'
+            for a in self.alfabeto:
+                s=s+str(a)+' : '+str(state.transicoes[a])+' \t'
+            if state.final:
+                s=s+"Final State"
+            s+='\n'
+        return s
+
+    def __repr__(self):
+        return self.__str__()
 class No:
     # A classe que vai representar cada nó de nossa árvore
     def __init__(self, tipo, operador, id=None, filho_esq=None, filho_dir=None):
@@ -29,51 +127,53 @@ class Arvore:
     # Essa classe controi a árvore sintática, que é muito importante para a conversão para AFD
     # Ela recebe a expressão regular como entrada
     def __init__(self, exRe):
-        self.folha = dict()
+        self.folhas = dict()
         self.id_contador = 1
-        self.raiz, doideira= self.criar_arvore(exRe)
-        print(doideira)
-        print("Nv 0")
-        print(self.raiz)
-        print("Nv 1")
-        print(self.raiz.filho_esq)
-        print(self.raiz.filho_dir)
-        print("Nv 2")
-        print(self.raiz.filho_esq.filho_esq)
-        print(self.raiz.filho_esq.filho_dir)
-        print("Nv 3")
-        print(self.raiz.filho_esq.filho_esq.filho_esq)
-        print(self.raiz.filho_esq.filho_esq.filho_dir)
-        print("Nv 4")
-        print(self.raiz.filho_esq.filho_esq.filho_dir.filho_esq)
-        print(self.raiz.filho_esq.filho_esq.filho_dir.filho_dir)
+        self.raiz, lixo= self.criar_arvore(exRe)
+        lixo = ""
+        #print("Nv 0")
+        #print(self.raiz)
+        #print("Nv 1")
+        #print(self.raiz.filho_esq)
+        #print(self.raiz.filho_dir)
+        #print("Nv 2")
+        #print(self.raiz.filho_esq.filho_esq)
+        #print(self.raiz.filho_esq.filho_dir)
+        #print("Nv 3")
+        #print(self.raiz.filho_esq.filho_esq.filho_esq)
+        #print(self.raiz.filho_esq.filho_esq.filho_dir)
+        #print("Nv 4")
+        #print(self.raiz.filho_esq.filho_esq.filho_dir.filho_esq)
+        #print(self.raiz.filho_esq.filho_esq.filho_dir.filho_dir)
         
         self.followpos = [set() for i in range(self.id_contador)]
         self.nullable_firstpos_lastpos_followpos(self.raiz)
+        print(self.folhas)
     def criar_arvore(self, exRe):
-        print(exRe)
         if (exRe != []):
             token = exRe[0]
             if token == ".":
                 del exRe[0]
                 filho_esq, n_exRe = self.criar_arvore(exRe)
                 filho_dir, nn_exRe = self.criar_arvore(n_exRe)
-                id  = self.contador_id()
-                return No("conc", token, id, filho_esq, filho_dir), nn_exRe
+                #id  = self.contador_id()
+                return No("conc", token, None, filho_esq, filho_dir), nn_exRe
             elif token == "+":
                 del exRe[0]
                 filho_esq, n_exRe = self.criar_arvore(exRe)
                 filho_dir, nn_exRe = self.criar_arvore(n_exRe)
-                id = self.contador_id()
-                return No("ou", token, id, filho_esq, filho_dir), nn_exRe
+                #id = self.contador_id()
+                return No("ou", token, None, filho_esq, filho_dir), nn_exRe
             elif token == "*":
                 del exRe[0]
                 filho_esq, n_exRe = self.criar_arvore(exRe)
-                id  = self.contador_id()
-                return No("fecho", token, id, filho_esq), n_exRe
+                #id  = self.contador_id()
+                return No("fecho", token, None, filho_esq), n_exRe
             else: #letra
                 del exRe[0]
-                return No("letra", token, id  = self.contador_id()), exRe
+                id  = self.contador_id()
+                self.folhas[id] = token
+                return No("letra", token, id), exRe
         else:
             return None
     def contador_id(self):
@@ -102,7 +202,7 @@ class Arvore:
             no.nullable = True
             no.firstpos = no.filho_esq.firstpos
             no.lastpos = no.filho_esq.lastpos
-            self.compute_follows(no)  # Follows is only computed for star and cat nodes
+            self.compute_follows(no) 
         elif no.tipo == "conc":
             no.nullable = no.filho_esq.nullable and no.filho_dir.nullable
             if no.filho_esq.nullable:
@@ -113,7 +213,7 @@ class Arvore:
                 no.lastpos = no.filho_esq.lastpos.union(no.filho_dir.lastpos)
             else:
                 no.lastpos = no.filho_dir.lastpos
-            self.compute_follows(no)  # Follows is only computed for star and cat nodes
+            self.compute_follows(no)
         return
     def compute_follows(self, no):
         if no.tipo == "conc":
@@ -166,8 +266,9 @@ def ler_input():
 def main():
     # Passo 1, processa o input
     ALFABETO, ExRe = ler_input()
-    print(ALFABETO, ExRe)
     arv = Arvore(ExRe)
+    d = AFD(ALFABETO, arv)
+    print(d)
 
 if __name__ == "__main__":
     main()
