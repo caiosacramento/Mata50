@@ -9,9 +9,7 @@ class Estado:
         self.id_set = set(id_lista)
         self.id = id
         self.transicoes = dict()
-        print("id_terminal",id_terminal-1)
         print(self.id_set)
-        #print()
         self.final = (id_terminal) in self.id_set
         for a in alfabeto:
             self.transicoes[a] = {} 
@@ -20,11 +18,11 @@ class AFD:
         self.estados = []
         self.alfabeto = alfabeto
         self.id_contador = 1
-        #self.final = arvore.id_contador -1
-        self.final = len(arvore.folhas) +1
+        print("o id counter ",arvore.id_contador)
+        self.final = arvore.id_contador-1
         self.computa_estados(arvore)
     def computa_estados(self, arvore):
-        D1 = Estado(self.alfabeto, arvore.raiz.lastpos, self.proximo_id(), self.final)
+        D1 = Estado(self.alfabeto, arvore.raiz.firstpos, self.proximo_id(), self.final)
         self.estados.append(D1)
         queue = [D1]
         while len(queue) > 0:  # Encontra as transicoes pros estados
@@ -58,6 +56,35 @@ class AFD:
                 if new:
                     new_states.append(estado.transicoes[a])
         return new_states
+    def computa_palavra(self, palavra):
+        print("estados", self.estados)
+        # . + . b * a a b
+        self.post_processing()
+        #print("estados ", self.estados[0].id, "com a vai pra  ",self.estados[0].transicoes["a"])
+        #print("estados ", self.estados[0].id, "com b vai pra  ",self.estados[0].transicoes["b"])
+        #print("estados ", self.estados[1].id, "com a vai pra  ",self.estados[1].transicoes["a"])
+        #print("estados ", self.estados[1].id, "com b vai pra  ",self.estados[1].transicoes["b"])
+        #print("estados ", self.estados[2].id, "com a vai pra  ",self.estados[2].transicoes["a"])
+        #print("estados ", self.estados[2].id, "com b vai pra  ",self.estados[2].transicoes["b"])
+        #print("estados ", self.estados[3].id, "com a vai pra  ",self.estados[3].transicoes["a"])
+        #print("estados ", self.estados[3].id, "com b vai pra  ",self.estados[3].transicoes["b"])
+        #print("estados ", self.estados[4].id, "com a vai pra  ",self.estados[4].transicoes["a"])
+        #print("estados ", self.estados[4].id, "com b vai pra  ",self.estados[4].transicoes["b"])
+        estado_atual= 0
+        while palavra != "":
+            print(palavra)
+            print(estado_atual)
+            if len(palavra) > 1:
+                estado_atual = self.estados[estado_atual].transicoes[palavra[0]]-1
+            else:
+                estado_atual = self.estados[estado_atual].transicoes[palavra]-1    
+            palavra = palavra[1:]
+        print(estado_atual)
+        if self.estados[estado_atual].final == True:
+            print("SIM")
+            return
+        print("NAO")
+        return    
     def proximo_id(self):
         id = self.id_contador
         self.id_contador += 1
@@ -129,26 +156,31 @@ class Arvore:
     def __init__(self, exRe):
         self.folhas = dict()
         self.id_contador = 1
-        self.raiz, lixo= self.criar_arvore(exRe)
-        lixo = ""
-        #print("Nv 0")
-        #print(self.raiz)
-        #print("Nv 1")
-        #print(self.raiz.filho_esq)
-        #print(self.raiz.filho_dir)
-        #print("Nv 2")
-        #print(self.raiz.filho_esq.filho_esq)
-        #print(self.raiz.filho_esq.filho_dir)
-        #print("Nv 3")
-        #print(self.raiz.filho_esq.filho_esq.filho_esq)
-        #print(self.raiz.filho_esq.filho_esq.filho_dir)
-        #print("Nv 4")
-        #print(self.raiz.filho_esq.filho_esq.filho_dir.filho_esq)
-        #print(self.raiz.filho_esq.filho_esq.filho_dir.filho_dir)
-        
+        raiz_aux, lixo= self.criar_arvore(exRe)
+        if(lixo != []): # Não deveria acontecer
+            print("Erro") 
+        no_aux = No('letra', '#', id=self.contador_id())
+        self.raiz = No("conc", ".", None, raiz_aux, no_aux)
+        print("Nv 0")
+        print(self.raiz)
+        print("Nv 1")
+        print(self.raiz.filho_esq)
+        print(self.raiz.filho_dir)
+        print("Nv 2")
+        print(self.raiz.filho_esq.filho_esq)
+        print(self.raiz.filho_esq.filho_dir)
+        print("Nv 3")
+        print(self.raiz.filho_esq.filho_esq.filho_esq)
+        print(self.raiz.filho_esq.filho_esq.filho_dir)
+        print("Nv 4")
+        print(self.raiz.filho_esq.filho_esq.filho_esq.filho_esq)
+        print(self.raiz.filho_esq.filho_esq.filho_esq.filho_dir)
+        print("Nv 5")
+        print(self.raiz.filho_esq.filho_esq.filho_esq.filho_dir.filho_esq)
         self.followpos = [set() for i in range(self.id_contador)]
         self.nullable_firstpos_lastpos_followpos(self.raiz)
-        print(self.folhas)
+        #print("o id contador dessa porra é ", self.id_contador)
+        print("firstpos ",self.raiz.firstpos)
     def criar_arvore(self, exRe):
         if (exRe != []):
             token = exRe[0]
@@ -176,12 +208,14 @@ class Arvore:
                 return No("letra", token, id), exRe
         else:
             return None
+    def string_multipla(self, string):
+        return
     def contador_id(self):
         id = self.id_contador
         self.id_contador += 1
         return id
     def nullable_firstpos_lastpos_followpos(self, no):
-        if no== None:
+        if not no:
             return
         # esq
         self.nullable_firstpos_lastpos_followpos(no.filho_esq)
@@ -192,6 +226,7 @@ class Arvore:
             if no.operador == "@":  # empty char
                 no.nullable = True
             else:
+                print("caiu na pegadinha")
                 no.firstpos.add(no.id)
                 no.lastpos.add(no.id)
         elif no.tipo == "ou":
@@ -268,7 +303,7 @@ def main():
     ALFABETO, ExRe = ler_input()
     arv = Arvore(ExRe)
     d = AFD(ALFABETO, arv)
-    print(d)
+    d.computa_palavra("aa")
 
 if __name__ == "__main__":
     main()
