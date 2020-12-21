@@ -3,70 +3,71 @@ class Estado:
     # Construtor da classe Estado
     # Args:
     #  Alfabeto da expressão regular
-    #  Lista de folhas
-    #  Id da folha
+    #  Lista das primeiras pos(Algumas nós da árvore se juntam para representa um nó no autômato, a primeira pos determina quais nós se juntam)
+    #  Id do estadp
+    #  Id_final como o id da última folha
 
-    def __init__(self, alfabeto, id_lista, id, id_terminal):
+    def __init__(self, alfabeto, id_lista, id, id_final):
         self.id_set = set(id_lista)
         self.id = id
         self.transicoes = dict()
-        self.final = (id_terminal) in self.id_set
-        for a in alfabeto:
+        self.final = (id_final) in self.id_set # Verdadeiro se é um estado final
+        for a in alfabeto: # Inicializa o dict de transições
             self.transicoes[a] = {} 
-class AFD:
+class AFD:  # Classe do AFD, recebe o alfabeto e a árvore sintática para gerar um AFD
     def __init__(self, alfabeto, arvore):
-        self.estados = []
-        self.alfabeto = alfabeto
-        self.id_contador = 1
-        self.final = arvore.id_contador-1
-        self.computa_estados(arvore)
+        self.estados = []   # Contém a lista de Estados
+        self.alfabeto = alfabeto    # O Alfabeto
+        self.id_contador = 1    
+        self.final = arvore.id_contador-1   # Tem essa subtração pois lembre que em nossa árvore temos um nó vazio
+        self.computa_estados(arvore)    # Chamamos então a função de criar o autõmato
     def computa_estados(self, arvore):
-        D1 = Estado(self.alfabeto, arvore.raiz.primeiraPos, self.proximo_id(), self.final)
-        self.estados.append(D1)
-        queue = [D1]
-        while len(queue) > 0:  # Encontra as transicoes pros estados
-            st = queue.pop(0)
-            new_states = self.Dtran(st, arvore)
-            for s in new_states:
-                state = Estado(self.alfabeto, s, self.proximo_id(), self.final)
-                self.estados.append(state)
-                queue.append(state)
+        primeiro_estado = Estado(self.alfabeto, arvore.raiz.primeiraPos, self.proximo_id(), self.final) # Cria o primeiro esado
+        self.estados.append(primeiro_estado)
+        pilha_de_estados = [primeiro_estado]
+        while len(pilha_de_estados) > 0:  # Encontra as transicoes pros estados. É aqui que novos estados vão ser criados e serão atribuitas suas transições
+            estado = pilha_de_estados.pop(0)
+            novos_estados = self.computa_transicoes(estado, arvore)
+            for est in novos_estados:   # Com a lista de estados para criar, criamos eles e os adicionamos na pilha. Em algum momento, não terão estados
+                estado_criado = Estado(self.alfabeto, est, self.proximo_id(), self.final) # novos e então acaba o loop.
+                self.estados.append(estado_criado)
+                pilha_de_estados.append(estado_criado)
         return
-    def Dtran(self, estado, arvore):
+    def computa_transicoes(self, estado, arvore):
         # Essa função calcula todas as transições de um estado
         # Recebe o estado e a árvore sintática
         # Retorna uma lista de estados
 
-        new_states = []
-        for i in estado.id_set:
-            if i == self.final:
+        novos_estados = []  # Lista para os estados que serão criados
+        for est in estado.id_set:
+            if est == self.final:   #   Checa se est é igual ao id final
                 continue
-            label = arvore.folhas[i]
-            if estado.transicoes[label] == {}:
-                estado.transicoes[label] = arvore.proximaPos[i]
+            operador = arvore.folhas[est]   # Busca o operador da folha(folhas são sempre letras)
+            if estado.transicoes[operador] == {}:
+                estado.transicoes[operador] = arvore.proximaPos[est]
             else:
-                estado.transicoes[label] = estado.transicoes[label].union(arvore.proximaPos[i])
-        for a in self.alfabeto:
-            if estado.transicoes[a] != {}:
-                new = True
-                for s in self.estados:
-                    if s.id_set == estado.transicoes[a] or estado.transicoes[a] in new_states:
-                        new = False
-                if new:
-                    new_states.append(estado.transicoes[a])
-        return new_states
-    def computa_palavra(self, palavra):
+                estado.transicoes[operador] = estado.transicoes[operador].union(arvore.proximaPos[est])
+        for letra in self.alfabeto:
+            if estado.transicoes[letra] != {}:
+                flag = True
+                for est in self.estados:
+                    if est.id_set == estado.transicoes[letra] or estado.transicoes[letra] in novos_estados:
+                        flag = False
+                if flag:
+                    novos_estados.append(estado.transicoes[letra])
+        return novos_estados    # Retorna os novos estaods
+    def computa_palavra(self, palavra): # Sunção que recebe as palavras para ver se são aceitas pelo autômato
 
-        self.post_processing()
+        self.maquia_automato() # Função para deixar o autômato mais agradável e fácil de entender e trabalhar
 
-        estado_atual= 0
-        while palavra != "":
+        estado_atual= 0     # Marca o estado inicial
+        while palavra != "":    # Enquanto a palavra não for vazia, processa. Basicamente faz a transição e guarda o estado onde está agora
             if len(palavra) > 1:
                 estado_atual = self.estados[estado_atual].transicoes[palavra[0]]-1
             else:
                 estado_atual = self.estados[estado_atual].transicoes[palavra]-1    
             palavra = palavra[1:]
-        if self.estados[estado_atual].final == True:
+        if self.estados[estado_atual].final == True: # Checa se no final do processamento da palavra chegou em um estado final.
             print("SIM")
             return
         print("NAO")
@@ -75,19 +76,19 @@ class AFD:
         id = self.id_contador
         self.id_contador += 1
         return id
-    def post_processing(self):
-        # Facilita a vizualização do automato
-        has_none_state = False
+    def maquia_automato(self):
+        # Apenas facilita a vizualização do automato
+        flag = False
         for state in self.estados:
-            for a in self.alfabeto:
-                if state.transicoes[a] == {}:
-                    has_none_state = True
-                    state.transicoes[a] = self.id_contador
-                SET = state.transicoes[a]
+            for letra in self.alfabeto:
+                if state.transicoes[letra] == {}:
+                    flag = True
+                    state.transicoes[letra] = self.id_contador
+                SET = state.transicoes[letra]
                 for state2 in self.estados:
                     if state2.id_set == SET:
-                        state.transicoes[a] = state2.id
-        if has_none_state:
+                        state.transicoes[letra] = state2.id
+        if flag:
             self.estados.append(Estado(self.alfabeto, [], self.id_contador, self.final))
             for a in self.alfabeto:
                 self.estados[-1].transicoes[a] = self.estados[-1].id
