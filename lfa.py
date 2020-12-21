@@ -1,3 +1,4 @@
+import sys
 class Estado:
     # Construtor da classe estado
     # Args:
@@ -275,10 +276,9 @@ def op(caractere):
         return False
     else:
         return True
-def ler_input():
+def ler_input(entrada):
     ## Recebe a entrada na forma descrita pela especificação
     ## Retorna duas listas, uma contendo o alfabeto e outra contendo a Expressão Regular
-    entrada = input()
     alfabeto = []
     exRe = []
     
@@ -310,12 +310,17 @@ def ler_input():
     alfabeto = list(aux)
 
     return alfabeto, exRe
-def main():
-    # Passo 1, processa o input
-    ALFABETO, ExRe = ler_input()
-    arv = Arvore(ExRe)
-    d = AFD(ALFABETO, arv)
-    d.computa_palavra("bbaaa")
+def main(argv, expres, palavra):
+    if argv ==  "-e":
+        return
+    elif argv == "-p":
+        # Passo 1, processa o input
+        ALFABETO, ExRe = ler_input(expres)
+        arv = Arvore(ExRe)
+        d = AFD(ALFABETO, arv)
+        d.computa_palavra(palavra)
+    else:
+        print("Argumento Inválido")
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1],sys.argv[2],sys.argv[3])
