@@ -172,11 +172,11 @@ class Arvore:
         print("Nv 3")
         print(self.raiz.filho_esq.filho_esq.filho_esq)
         print(self.raiz.filho_esq.filho_esq.filho_dir)
-        print("Nv 4")
+        print("nv 4")
         print(self.raiz.filho_esq.filho_esq.filho_esq.filho_esq)
         print(self.raiz.filho_esq.filho_esq.filho_esq.filho_dir)
-        print("Nv 5")
-        print(self.raiz.filho_esq.filho_esq.filho_esq.filho_dir.filho_esq)
+        print(self.raiz.filho_esq.filho_esq.filho_dir.filho_esq)
+        print(self.raiz.filho_esq.filho_esq.filho_dir.filho_dir)
         self.followpos = [set() for i in range(self.id_contador)]
         self.nullable_firstpos_lastpos_followpos(self.raiz)
         #print("o id contador dessa porra é ", self.id_contador)
@@ -203,13 +203,25 @@ class Arvore:
                 return No("fecho", token, None, filho_esq), n_exRe
             else: #letra
                 del exRe[0]
-                id  = self.contador_id()
-                self.folhas[id] = token
-                return No("letra", token, id), exRe
+                if(len(token) == 1):
+                    id  = self.contador_id()
+                    self.folhas[id] = token
+                    return No("letra", token, id), exRe
+                else:
+                    return self.string_multipla(token), exRe # Para o caso da string ter mais que uma letra
         else:
             return None
-    def string_multipla(self, string):
-        return
+    def string_multipla(self, palavra): # Funcção para o caso da string ter mais que uma letra. Isto é, o elemente da lista é "aa", e então temos que
+        if(len(palavra) == 1):          # transforma em a concatenado com a
+            id = self.contador_id()
+            self.folhas[id] = palavra
+            return No("letra", palavra, id)
+        else:
+            id = self.contador_id()
+            self.folhas[id] = palavra[0]
+            filho_esq = No("letra", palavra[0], id)
+            filho_dir = self.string_multipla(palavra[1:])
+            return No("conc", ".", None, filho_esq, filho_dir)
     def contador_id(self):
         id = self.id_contador
         self.id_contador += 1
@@ -303,7 +315,7 @@ def main():
     ALFABETO, ExRe = ler_input()
     arv = Arvore(ExRe)
     d = AFD(ALFABETO, arv)
-    d.computa_palavra("aa")
+    d.computa_palavra("bbaaa")
 
 if __name__ == "__main__":
     main()
