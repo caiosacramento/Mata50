@@ -79,15 +79,15 @@ class AFD:  # Classe do AFD, recebe o alfabeto e a árvore sintática para gerar
     def maquia_automato(self):
         # Apenas facilita a vizualização do automato
         flag = False
-        for state in self.estados:
+        for estado in self.estados:
             for letra in self.alfabeto:
-                if state.transicoes[letra] == {}:
+                if estado.transicoes[letra] == {}:
                     flag = True
-                    state.transicoes[letra] = self.id_contador
-                SET = state.transicoes[letra]
-                for state2 in self.estados:
-                    if state2.id_set == SET:
-                        state.transicoes[letra] = state2.id
+                    estado.transicoes[letra] = self.id_contador
+                conj = estado.transicoes[letra]
+                for estado2 in self.estados:
+                    if estado2.id_set == conj:
+                        estado.transicoes[letra] = estado2.id
         if flag:
             self.estados.append(Estado(self.alfabeto, [], self.id_contador, self.final))
             for a in self.alfabeto:
